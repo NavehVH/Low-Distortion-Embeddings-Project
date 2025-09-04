@@ -33,7 +33,7 @@ def baswana_sen_spanner(
     G: Graph,
     stretch: int,
     weight: Optional[str] = None,
-    seed: Optional[int] = None,
+    seed: Optional[int] = 1,
     *,
     max_iter_size_factor: float = 2.0,
 ) -> Graph:
