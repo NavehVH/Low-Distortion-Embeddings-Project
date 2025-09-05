@@ -5,7 +5,7 @@ from typing import Dict, Hashable, Iterable, Optional, Tuple, List, Set
 
 from simple_graph import Graph, dijkstra_all_pairs, gnm_random_graph
 
-
+# TODO: Understand why do we need and have this class - if not required remove it.
 def baswana_sen_spanner(
         G: Graph,
         stretch: int,

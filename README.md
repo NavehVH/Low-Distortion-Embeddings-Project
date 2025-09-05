@@ -4,9 +4,9 @@ Small, dependency-light Python project that builds a **(2k–1)-spanner** from a
 
 ## Repo layout
 
-    simple_graph.py           # minimal undirected graph + helpers
-    spanner.py                # Baswana–Sen implementation with CLI
-    baswana_sen_spanner.py    # Baswana–Sen implementation with comments
+    simple_graph.py                    # minimal undirected graph + helpers
+    spanner.py                         # Baswana–Sen implementation with CLI
+    baswana_sen_spanner.py             # Baswana–Sen implementation
 
 ## Requirements
 
