@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 import argparse
 import random
@@ -7,13 +5,14 @@ from typing import Dict, Hashable, Iterable, Optional, Tuple, List, Set
 
 from simple_graph import Graph, dijkstra_all_pairs, gnm_random_graph
 
+
 def baswana_sen_spanner(
-    G: Graph,
-    stretch: int,
-    weight: Optional[str] = None,
-    seed: Optional[int] = 1,
-    *,
-    max_iter_size_factor: float = 2.0,
+        G: Graph,
+        stretch: int,
+        weight: Optional[str] = None,
+        seed: Optional[int] = 1,
+        *,
+        max_iter_size_factor: float = 2.0,
 ) -> Graph:
     if stretch < 1:
         raise ValueError("stretch must be >= 1")
@@ -69,6 +68,7 @@ def baswana_sen_spanner(
     _phase2_vertex_cluster_joining(H, R, clustering, weight_attr=weight)
     return H
 
+
 def _make_residual_graph(G: Graph, weight_attr: Optional[str]) -> Graph:
     R = Graph()
     R.add_nodes_from(G.nodes())
@@ -79,14 +79,16 @@ def _make_residual_graph(G: Graph, weight_attr: Optional[str]) -> Graph:
         R.add_edge(u, v, key=key, orig_weight=float(w))
     return R
 
+
 def _step1_sample_centers(clustering: Dict[Hashable, Hashable], p: float, rng: random.Random) -> set:
     centers = set(clustering.values())
     return {c for c in centers if rng.random() < p}
 
+
 def _step2_lightest_representatives(
-    R: Graph,
-    clustering: Dict[Hashable, Hashable],
-    v: Hashable,
+        R: Graph,
+        clustering: Dict[Hashable, Hashable],
+        v: Hashable,
 ) -> Tuple[Dict[Hashable, Hashable], Dict[Hashable, Tuple]]:
     best_neighbor: Dict[Hashable, Hashable] = {}
     best_key: Dict[Hashable, Tuple] = {}
@@ -98,28 +100,30 @@ def _step2_lightest_representatives(
             best_neighbor[c] = u
     return best_neighbor, best_key
 
+
 def _step3_case_no_sampled_neighbor(
-    v: Hashable,
-    R: Graph,
-    best_neighbor: Dict[Hashable, Hashable],
-    edges_to_add: Set[Tuple[Hashable, Hashable]],
-    edges_to_remove: Set[Tuple[Hashable, Hashable]],
+        v: Hashable,
+        R: Graph,
+        best_neighbor: Dict[Hashable, Hashable],
+        edges_to_add: Set[Tuple[Hashable, Hashable]],
+        edges_to_remove: Set[Tuple[Hashable, Hashable]],
 ) -> None:
     for _, u in best_neighbor.items():
         edges_to_add.add(_as_undirected(v, u))
     for u in list(R.neighbors(v)):
         edges_to_remove.add(_as_undirected(v, u))
 
+
 def _step3_case_with_sampled_neighbor(
-    v: Hashable,
-    R: Graph,
-    clustering: Dict[Hashable, Hashable],
-    best_neighbor: Dict[Hashable, Hashable],
-    best_key: Dict[Hashable, Tuple],
-    sampled_adj: List[Hashable],
-    new_clustering: Dict[Hashable, Hashable],
-    edges_to_add: Set[Tuple[Hashable, Hashable]],
-    edges_to_remove: Set[Tuple[Hashable, Hashable]],
+        v: Hashable,
+        R: Graph,
+        clustering: Dict[Hashable, Hashable],
+        best_neighbor: Dict[Hashable, Hashable],
+        best_key: Dict[Hashable, Tuple],
+        sampled_adj: List[Hashable],
+        new_clustering: Dict[Hashable, Hashable],
+        edges_to_add: Set[Tuple[Hashable, Hashable]],
+        edges_to_remove: Set[Tuple[Hashable, Hashable]],
 ) -> None:
     closest_center = min(sampled_adj, key=lambda c: best_key[c])
     closest_u = best_neighbor[closest_center]
@@ -137,6 +141,7 @@ def _step3_case_with_sampled_neighbor(
         if c_u in best_key and best_key[c_u] <= closest_key:
             edges_to_remove.add(_as_undirected(v, u))
 
+
 def _step4_prune_intracluster_edges(R: Graph, clustering: Dict[Hashable, Hashable]) -> None:
     to_remove: List[Tuple[Hashable, Hashable]] = []
     for u, v in R.edges():
@@ -144,16 +149,17 @@ def _step4_prune_intracluster_edges(R: Graph, clustering: Dict[Hashable, Hashabl
             to_remove.append((u, v))
     R.remove_edges_from(to_remove)
 
+
 def _commit_phase1_round(
-    H: Graph,
-    R: Graph,
-    old_clustering: Dict[Hashable, Hashable],
-    new_clustering_partial: Dict[Hashable, Hashable],
-    sampled_centers: set,
-    edges_to_add: Iterable[Tuple[Hashable, Hashable]],
-    edges_to_remove: Iterable[Tuple[Hashable, Hashable]],
-    *,
-    weight_attr: Optional[str],
+        H: Graph,
+        R: Graph,
+        old_clustering: Dict[Hashable, Hashable],
+        new_clustering_partial: Dict[Hashable, Hashable],
+        sampled_centers: set,
+        edges_to_add: Iterable[Tuple[Hashable, Hashable]],
+        edges_to_remove: Iterable[Tuple[Hashable, Hashable]],
+        *,
+        weight_attr: Optional[str],
 ) -> Dict[Hashable, Hashable]:
     _bulk_add_edges(H, R, edges_to_add, weight_attr=weight_attr)
     R.remove_edges_from(edges_to_remove)
@@ -171,38 +177,42 @@ def _commit_phase1_round(
 
     return clustering
 
+
 def _phase2_vertex_cluster_joining(
-    H: Graph,
-    R: Graph,
-    clustering: Dict[Hashable, Hashable],
-    *,
-    weight_attr: Optional[str],
+        H: Graph,
+        R: Graph,
+        clustering: Dict[Hashable, Hashable],
+        *,
+        weight_attr: Optional[str],
 ) -> None:
     for v in list(R.nodes()):
         best_neighbor, _ = _step2_lightest_representatives(R, clustering, v)
         for u in best_neighbor.values():
             _add_one_edge(H, R, v, u, weight_attr=weight_attr)
 
+
 def _as_undirected(u: Hashable, v: Hashable) -> Tuple[Hashable, Hashable]:
     return (u, v) if repr(u) <= repr(v) else (v, u)
 
+
 def _bulk_add_edges(
-    H: Graph,
-    R: Graph,
-    edges: Iterable[Tuple[Hashable, Hashable]],
-    *,
-    weight_attr: Optional[str],
+        H: Graph,
+        R: Graph,
+        edges: Iterable[Tuple[Hashable, Hashable]],
+        *,
+        weight_attr: Optional[str],
 ) -> None:
     for u, v in edges:
         _add_one_edge(H, R, u, v, weight_attr=weight_attr)
 
+
 def _add_one_edge(
-    H: Graph,
-    R: Graph,
-    u: Hashable,
-    v: Hashable,
-    *,
-    weight_attr: Optional[str],
+        H: Graph,
+        R: Graph,
+        u: Hashable,
+        v: Hashable,
+        *,
+        weight_attr: Optional[str],
 ) -> None:
     if H.has_edge(u, v):
         return
@@ -211,6 +221,7 @@ def _add_one_edge(
         w = R.adj[u][v]["orig_weight"]
         H.adj[u][v][weight_attr] = w
         H.adj[v][u][weight_attr] = w
+
 
 def check_spanner(G: Graph, H: Graph, t: float, weight: Optional[str] = None, atol: float = 1e-9) -> None:
     dG = dijkstra_all_pairs(G, weight)
@@ -226,17 +237,19 @@ def check_spanner(G: Graph, H: Graph, t: float, weight: Optional[str] = None, at
                 f"Stretch violated for ({u},{v}): dH={dH[u][v]} vs {t}*dG={dG[u][v]}"
             )
 
+
 def is_subgraph_edges(G: Graph, H: Graph) -> bool:
     return all(G.has_edge(u, v) for u, v in H.edges())
+
 
 def build_graph_from_args(args: argparse.Namespace) -> Tuple[Graph, Optional[str]]:
     if args.graph == "example":
         G = Graph()
-        for a, b in [(0,1),(1,2),(2,3),(4,5),(5,6),(6,7)]:
+        for a, b in [(0, 1), (1, 2), (2, 3), (4, 5), (5, 6), (6, 7)]:
             G.add_edge(a, b, w=1.0)
-        for a, b in [(0,4),(1,5),(2,6),(3,7)]:
+        for a, b in [(0, 4), (1, 5), (2, 6), (3, 7)]:
             G.add_edge(a, b, w=0.9)
-        for a, b, w in [(0,5,2.0),(1,4,2.2),(1,6,2.4),(2,5,2.6),(2,7,2.8),(3,6,3.0)]:
+        for a, b, w in [(0, 5, 2.0), (1, 4, 2.2), (1, 6, 2.4), (2, 5, 2.6), (2, 7, 2.8), (3, 6, 3.0)]:
             G.add_edge(a, b, w=w)
         return G, "w"
 
@@ -272,6 +285,7 @@ def build_graph_from_args(args: argparse.Namespace) -> Tuple[Graph, Optional[str
         return G, weight_attr
 
     raise SystemExit(f"Unknown graph mode: {args.graph}")
+
 
 def main():
     ap = argparse.ArgumentParser(description="Baswana–Sen (2k-1) spanner (no external deps)")
@@ -317,6 +331,7 @@ def main():
         print("Spanner edges (u, v, data):")
         for u, v, data in H.edges(data=True):
             print((u, v, data))
+
 
 if __name__ == "__main__":
     main()
