@@ -1,106 +1,64 @@
 # Low-Distortion-Embeddings-Project Baswana–Sen Spanner (Python)
 
-Small, dependency-light Python project that:
-- Builds a **(2k–1)-spanner** from an input graph using the Baswana–Sen algorithm.
-- Visualizes **Original graph G** vs **Spanner H** side-by-side with `|V|`, `|E|`, and edge-reduction %.
+Small, dependency-light Python project that builds a **(2k–1)-spanner** from an input graph using the Baswana–Sen algorithm.
 
 ## Repo layout
 
-    simple_graph.py   # minimal undirected graph + helpers
-    spanner.py        # Baswana–Sen implementation: baswana_sen_spanner(...)
-    viz_spanner.py    # CLI to build a demo graph, run spanner, and save PNG
-    baswana_sen_spanne.py # Just the code with comments
+    simple_graph.py           # minimal undirected graph + helpers
+    spanner.py                # Baswana–Sen implementation with CLI
+    baswana_sen_spanner.py    # Baswana–Sen implementation with comments
 
 ## Requirements
 
 - Python 3.8+
-- matplotlib
 
-Install:
+No external dependencies required.
 
-    pip3 install matplotlib
+## Quick start
 
-## Quick start (triangle demo)
+Run the algorithm on an example graph:
 
-Headless save to PNG (works on servers/WSL/containers):
+    python3 spanner.py --graph example --stretch 3
 
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case triangle --stretch 3 --seed 1 --save ex_triangle.png
-
-This writes `ex_triangle.png` with two panels:
-- Left: original **G**
-- Right: spanner **H** (shows `|V|`, `|E|`, and `ΔE` edge-reduction %)
-
-> On a desktop with a GUI backend installed, you can omit `MPLBACKEND=Agg` and `--save` to open an interactive window.
+This will build a spanner and print statistics including:
+- Number of nodes and edges in original vs spanner graph
+- Edge reduction percentage
+- Stretch guarantee verification
 
 ## CLI usage
 
-    python3 viz_spanner.py
-      --graph {example,random}
-      [--case {triangle,square,square_diag,square_diag_equal,path6,star6,k4_mix,k4_complete,two_tris_bridge,ladder,pentagon,wheel6}]
+    python3 spanner.py
+      --graph {example,random,edgelist}
+      [--edgelist PATH]             # path to edgelist file for --graph edgelist
       [--n N --m M]                 # only for --graph random
       [--weighted]                  # only for --graph random
-      [--stretch T]                 # desired t; algorithm uses k=floor((t+1)/2)
-      [--seed SEED]                 # integer for reproducible randomness; omit for fresh randomness (Use 1)
-      [--save PATH.png]             # save figure; otherwise shows a window (if GUI backend exists)
+      [--stretch T]                 # desired stretch; algorithm uses k=floor((t+1)/2)
+      [--seed SEED]                 # integer for reproducible randomness
+      [--print-edges]               # print all spanner edges
 
-### Example graphs (when `--graph example`)
+## Examples
 
-- `triangle` – 3 nodes, one heavy edge (two edges weight 1.0, one edge weight 2.0)
-- `square` – 4-cycle (unweighted)
-- `square_diag` – 4-cycle + diagonal (diagonal heavier)
-- `square_diag_equal` – 4-cycle + diagonal, **all weight = 1.0**
-- `path6` – path on 6 nodes (tree)
-- `star6` – star with 5 leaves (tree)
-- `k4_mix` – K4 with mixed weights (triangle light, edges to 4th node heavier)
-- `k4_complete` – K4 unweighted
-- `two_tris_bridge` – two triangles joined by a light bridge
-- `ladder` – 2×4 ladder (rails light, rungs heavier)
-- `pentagon` – 5-cycle (unweighted)
-- `wheel6` – wheel (center + 5 rim nodes; spokes light, rim heavier)
+Run algorithm on built-in example graph:
 
-Run any case (seeded, headless save):
+    python3 spanner.py --graph example --stretch 3 --print-edges
 
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case wheel6 --stretch 3 --seed 1 --save ex_wheel6.png
+Generate and process a random graph:
 
-## Run ALL built-in examples (seed = 1)
+    python3 spanner.py --graph random --n 50 --m 100 --weighted --stretch 5 --seed 42
 
-One-by-one:
+Process graph from edgelist file:
 
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case triangle            --stretch 3 --seed 1 --save ex_triangle.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case square              --stretch 3 --seed 1 --save ex_square.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case square_diag         --stretch 3 --seed 1 --save ex_square_diag.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case square_diag_equal   --stretch 3 --seed 1 --save ex_square_diag_equal.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case path6               --stretch 3 --seed 1 --save ex_path6.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case star6               --stretch 3 --seed 1 --save ex_star6.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case k4_mix              --stretch 3 --seed 1 --save ex_k4_mix.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case k4_complete         --stretch 3 --seed 1 --save ex_k4_complete.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case two_tris_bridge     --stretch 3 --seed 1 --save ex_bridge.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case ladder              --stretch 3 --seed 1 --save ex_ladder.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case pentagon            --stretch 3 --seed 1 --save ex_pentagon.png
-    MPLBACKEND=Agg python3 viz_spanner.py --graph example --case wheel6              --stretch 3 --seed 1 --save ex_wheel6.png
+    python3 spanner.py --graph edgelist --edgelist my_graph.txt --stretch 3
 
-Bash loop:
+## Input formats
 
-    cases=(triangle square square_diag square_diag_equal path6 star6 k4_mix k4_complete two_tris_bridge ladder pentagon wheel6)
-    for c in "${cases[@]}"; do
-      MPLBACKEND=Agg python3 viz_spanner.py --graph example --case "$c" --stretch 3 --seed 1 --save "ex_${c}.png"
-    done
-
-## Random graphs
-
-    MPLBACKEND=Agg python3 viz_spanner.py --graph random --n 80 --m 200 --weighted --stretch 5 --seed 42 --save ex_random.png
+**Edgelist format** (for `--graph edgelist`):
+- Unweighted: `u v` (one edge per line)
+- Weighted: `u v w` (one edge per line with weight)
 
 ## Notes
 
 - **Stretch vs k:** the algorithm outputs a \((2k-1)\)-spanner with \(k = \lfloor (t+1)/2 \rfloor\).  
   Example: `--stretch 3` → `k=2` → 3-spanner.
 - **Randomization:** Baswana–Sen is randomized. Different seeds can produce different valid spanners. Using `--seed` makes the result reproducible; omitting it uses fresh randomness.
-- **Headless environments:** If you see Qt/tk warnings, keep `MPLBACKEND=Agg` and `--save` to write a PNG instead of opening a window.
-
-## Optional: print spanner edges in console
-
-If `spanner.py` exposes a small CLI, for example:
-
-    python3 spanner.py --graph example --stretch 3 --print-edges
-
-This prints the selected spanner edges and verifies the stretch guarantee.
+- **Algorithm verification:** The implementation includes automatic stretch guarantee verification for all node pairs.
