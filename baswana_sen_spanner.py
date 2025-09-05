@@ -117,7 +117,7 @@ def _step2_find_lightest_edges_to_clusters(
     
     for neighbor_vertex in residual_graph.neighbors(source_vertex):
         neighbor_cluster = vertex_to_cluster_center[neighbor_vertex]
-        edge_key = residual_graph.adj[source_vertex][neighbor_vertex]["key"]
+        edge_key = residual_graph.adjacency_lists[source_vertex][neighbor_vertex]["key"]
         
         if (neighbor_cluster not in lightest_weight_to_cluster) or (edge_key < lightest_weight_to_cluster[neighbor_cluster]):
             lightest_weight_to_cluster[neighbor_cluster] = edge_key
@@ -225,9 +225,9 @@ def _add_single_edge_to_spanner(
     
     spanner_graph.add_edge(vertex_u, vertex_v)
     if weight_attribute:
-        original_weight = residual_graph.adj[vertex_u][vertex_v]["orig_weight"]
-        spanner_graph.adj[vertex_u][vertex_v][weight_attribute] = original_weight
-        spanner_graph.adj[vertex_v][vertex_u][weight_attribute] = original_weight
+        original_weight = residual_graph.adjacency_lists[vertex_u][vertex_v]["orig_weight"]
+        spanner_graph.adjacency_lists[vertex_u][vertex_v][weight_attribute] = original_weight
+        spanner_graph.adjacency_lists[vertex_v][vertex_u][weight_attribute] = original_weight
 
 def check_spanner(original_graph: Graph, spanner_graph: Graph, stretch_factor: float, weight_attribute: Optional[str] = None, tolerance: float = 1e-9) -> None:
     distances_original = dijkstra_all_pairs(original_graph, weight_attribute)
@@ -261,8 +261,8 @@ def build_graph_from_args(args: argparse.Namespace) -> Tuple[Graph, Optional[str
             rng = random.Random(args.seed)
             for vertex_u, vertex_v in graph.edges():
                 weight = 1.0 + rng.random() * 9.0
-                graph.adj[vertex_u][vertex_v]["w"] = weight
-                graph.adj[vertex_v][vertex_u]["w"] = weight
+                graph.adjacency_lists[vertex_u][vertex_v]["w"] = weight
+                graph.adjacency_lists[vertex_v][vertex_u]["w"] = weight
             return graph, "w"
         else:
             return graph, None
