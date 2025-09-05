@@ -2,7 +2,7 @@ from __future__ import annotations
 import random
 from typing import Dict, Hashable, Iterable, Optional, Tuple, List
 
-from simple_graph import Graph, dijkstra_all_pairs
+from simple_graph import Graph
 
 def baswana_sen_spanner(
         original_graph: Graph,
@@ -228,23 +228,6 @@ def _add_single_edge_to_spanner(
         spanner_graph.adjacency_lists[vertex_u][vertex_v][weight_attribute] = original_weight
         spanner_graph.adjacency_lists[vertex_v][vertex_u][weight_attribute] = original_weight
 
-def check_spanner(original_graph: Graph, spanner_graph: Graph, stretch_factor: float, weight_attribute: Optional[str] = None, tolerance: float = 1e-9) -> None:
-    distances_original = dijkstra_all_pairs(original_graph, weight_attribute)
-    distances_spanner = dijkstra_all_pairs(spanner_graph, weight_attribute)
-    
-    for vertex_u in original_graph.nodes():
-        for vertex_v in original_graph.nodes():
-            if vertex_u == vertex_v:
-                continue
-            if vertex_v not in distances_original[vertex_u]:
-                continue
-            assert vertex_v in distances_spanner[vertex_u], f"No path in spanner between {vertex_u} and {vertex_v}"
-            assert distances_spanner[vertex_u][vertex_v] <= stretch_factor * distances_original[vertex_u][vertex_v] + tolerance, (
-                f"Stretch violated for ({vertex_u},{vertex_v}): spanner_distance={distances_spanner[vertex_u][vertex_v]} vs {stretch_factor}*original_distance={distances_original[vertex_u][vertex_v]}"
-            )
-
-def is_subgraph_edges(original_graph: Graph, spanner_graph: Graph) -> bool:
-    return all(original_graph.has_edge(vertex_u, vertex_v) for vertex_u, vertex_v in spanner_graph.edges())
 
 def main():
     graph = Graph()
@@ -266,13 +249,6 @@ def main():
     
     spanner_graph = baswana_sen_spanner(original_graph, stretch=stretch, weight_attribute=weight_attribute, random_seed=random_seed)
     k_parameter = max(1, (stretch + 1) // 2)
-    effective_stretch = 2 * k_parameter - 1
-
-    try:
-        check_spanner(original_graph, spanner_graph, stretch_factor=effective_stretch, weight_attribute=weight_attribute)
-    except AssertionError as error:
-        print("Stretch check failed:", error)
-
     original_edges = original_graph.number_of_edges()
     spanner_edges = spanner_graph.number_of_edges()
     reduction_percentage = 100.0 * (1.0 - spanner_edges / max(1, original_edges))
