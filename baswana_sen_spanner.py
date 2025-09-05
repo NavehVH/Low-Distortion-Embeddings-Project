@@ -1,9 +1,8 @@
 from __future__ import annotations
-import argparse
 import random
 from typing import Dict, Hashable, Iterable, Optional, Tuple, List
 
-from simple_graph import Graph, dijkstra_all_pairs, gnm_random_graph
+from simple_graph import Graph, dijkstra_all_pairs
 
 def baswana_sen_spanner(
         original_graph: Graph,
@@ -247,63 +246,26 @@ def check_spanner(original_graph: Graph, spanner_graph: Graph, stretch_factor: f
 def is_subgraph_edges(original_graph: Graph, spanner_graph: Graph) -> bool:
     return all(original_graph.has_edge(vertex_u, vertex_v) for vertex_u, vertex_v in spanner_graph.edges())
 
-def build_graph_from_args(args: argparse.Namespace) -> Tuple[Graph, Optional[str]]:
-    if args.graph == "example":
-        graph = Graph()
-        graph.add_edge(0, 1, w=1.0)
-        graph.add_edge(0, 2, w=1.0)
-        graph.add_edge(1, 2, w=2.0)
-        return graph, "w"
-
-    if args.graph == "random":
-        graph = gnm_random_graph(args.n, args.m, seed=args.seed)
-        if args.weighted:
-            rng = random.Random(args.seed)
-            for vertex_u, vertex_v in graph.edges():
-                weight = 1.0 + rng.random() * 9.0
-                graph.adjacency_lists[vertex_u][vertex_v]["w"] = weight
-                graph.adjacency_lists[vertex_v][vertex_u]["w"] = weight
-            return graph, "w"
-        else:
-            return graph, None
-
-    if args.graph == "edgelist":
-        if not args.edgelist:
-            raise SystemExit("--edgelist path is required when --graph edgelist")
-        graph = Graph()
-        weight_attribute = None
-        with open(args.edgelist, "r", encoding="utf-8") as file:
-            for line in file:
-                parts = line.strip().split()
-                if not parts:
-                    continue
-                if len(parts) == 2:
-                    vertex_u, vertex_v = parts
-                    graph.add_edge(vertex_u, vertex_v)
-                else:
-                    vertex_u, vertex_v, weight = parts[0], parts[1], float(parts[2])
-                    graph.add_edge(vertex_u, vertex_v, w=weight)
-                    weight_attribute = "w"
-        return graph, weight_attribute
-
-    raise SystemExit(f"Unknown graph mode: {args.graph}")
-
 def main():
-    argument_parser = argparse.ArgumentParser(description="Baswana–Sen (2k-1) spanner (no external deps)")
-    argument_parser.add_argument("--stretch", type=int, default=3, help="desired t (builds (2k-1)-spanner with k=floor((t+1)/2))")
-    argument_parser.add_argument("--graph", choices=["example", "random", "edgelist"], default="example", help="graph source")
-    argument_parser.add_argument("--edgelist", type=str, default=None, help="path to edgelist (u v [w]) for --graph edgelist")
-    argument_parser.add_argument("--n", type=int, default=100, help="random graph: number of nodes")
-    argument_parser.add_argument("--m", type=int, default=300, help="random graph: number of edges")
-    argument_parser.add_argument("--weighted", action="store_true", help="random graph: assign random weights 'w' in [1,10)")
-    argument_parser.add_argument("--seed", type=int, default=None, help="RNG seed")
-    argument_parser.add_argument("--print-edges", action="store_true", help="print spanner edges")
-    args = argument_parser.parse_args()
-
-    original_graph, weight_attribute = build_graph_from_args(args)
-    spanner_graph = baswana_sen_spanner(original_graph, stretch=args.stretch, weight_attribute=weight_attribute, random_seed=args.seed)
-
-    k_parameter = max(1, (args.stretch + 1) // 2)
+    graph = Graph()
+    weight_attribute = "w"
+    num_edges = int(input("Enter number of edges: "))
+    print("Enter each edge as: vertex1 vertex2 weight (Example: 0 1 1.0)")
+    
+    for i in range(num_edges):
+        edge_input = input(f"Edge {i + 1}: ").strip().split()
+        vertex_u_str, vertex_v_str, weight_str = edge_input
+        graph.add_edge(int(vertex_u_str), int(vertex_v_str), w=float(weight_str))
+    
+    original_graph = graph
+    stretch_input = input("Enter stretch factor (default 3): ").strip()
+    stretch = int(stretch_input) if stretch_input else 3
+    
+    seed_input = input("Enter random seed (default is None): ").strip()
+    random_seed = int(seed_input) if seed_input else None
+    
+    spanner_graph = baswana_sen_spanner(original_graph, stretch=stretch, weight_attribute=weight_attribute, random_seed=random_seed)
+    k_parameter = max(1, (stretch + 1) // 2)
     effective_stretch = 2 * k_parameter - 1
 
     try:
@@ -329,7 +291,7 @@ def main():
     for vertex_u, vertex_v, edge_data in spanner_graph.edges(data=True):
         spanner_edges_list.append(format_edge(vertex_u, vertex_v, edge_data))
     
-    print(f"Original: {', '.join(original_edges_list)}")
+    print(f"\nOriginal: {', '.join(original_edges_list)}")
     print(f"Spanner: {', '.join(spanner_edges_list)} | k = {k_parameter} | Edge reduction: {reduction_percentage:.2f}%")
 
 if __name__ == "__main__":
