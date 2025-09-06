@@ -1,64 +1,113 @@
-# Low-Distortion-Embeddings-Project Baswana–Sen Spanner (Python)
+# Baswana-Sen Spanner Algorithm Implementation
 
-Small, dependency-light Python project that builds a **(2k–1)-spanner** from an input graph using the Baswana–Sen algorithm.
+A Python implementation of the **Baswana-Sen algorithm** for computing **(2k-1)-spanners** in weighted graphs, based on the seminal 2003 paper "A Simple and Linear Time Randomized Algorithm for Computing Sparse Spanners in Weighted Graphs" by Surender Baswana and Sandeep Sen.
 
-## Repo layout
+## Academic Background
 
-    simple_graph.py                    # minimal undirected graph + helpers
-    spanner.py                         # Baswana–Sen implementation with CLI
-    baswana_sen_spanner.py             # Baswana–Sen implementation
+This implementation is based on the groundbreaking research by Baswana and Sen that introduced the first linear-time randomized algorithm for computing sparse spanners. Their algorithm achieves:
+
+- **Time Complexity**: O(km) expected time
+- **Spanner Size**: O(kn^(1+1/k)) edges  
+- **Stretch Factor**: (2k-1)
+- **Key Innovation**: A novel clustering approach that avoids distance computations entirely
+
+The algorithm's size bound essentially matches the worst-case lower bound implied by the 43-year-old girth conjecture made independently by Erdős, Bollobás, and Bondy & Simonovits.
+
+
+## Repository Structure
+
+```
+baswana_spanner.py      # Main Baswana-Sen algorithm implementation
+simple_graph.py         # Custom Graph class with adjacency list representation
+README.md              # This documentation
+```
 
 ## Requirements
 
-- Python 3.8+
+- **Python 3.8+**
+- No external dependencies required
 
-No external dependencies required.
+## Algorithm Overview
 
-## Quick start
+The Baswana-Sen algorithm operates in two phases:
 
-Run the algorithm on an example graph:
+### Phase 1: Cluster Formation (k-1 iterations)
+1. **Sampling**: Each cluster is sampled with probability n^(-1/k)
+2. **Vertex Assignment**: Non-sampled vertices join their nearest sampled neighbor
+3. **Edge Selection**: Carefully chosen edges are added to the spanner
+4. **Clustering Update**: New clustering is formed for the next iteration
 
-    python3 spanner.py --graph example --stretch 3
+### Phase 2: Vertex-Cluster Joining
+- Each vertex connects to its neighboring clusters via lightest edges
+- Ensures the final stretch bound of (2k-1)
 
-This will build a spanner and print statistics including:
-- Number of nodes and edges in original vs spanner graph
-- Edge reduction percentage
-- Stretch guarantee verification
+## Usage
 
-## CLI usage
+Run the interactive program:
 
-    python3 spanner.py
-      --graph {example,random,edgelist}
-      [--edgelist PATH]             # path to edgelist file for --graph edgelist
-      [--n N --m M]                 # only for --graph random
-      [--weighted]                  # only for --graph random
-      [--stretch T]                 # desired stretch; algorithm uses k=floor((t+1)/2)
-      [--seed SEED]                 # integer for reproducible randomness
-      [--print-edges]               # print all spanner edges
+```bash
+python3 baswana_spanner.py
+```
 
-## Examples
+### Interactive Input Process
 
-Run algorithm on built-in example graph:
+1. **Number of edges**: Enter total edges in your graph
+2. **Edge specification**: For each edge, enter: `vertex1 vertex2 weight`
+3. **Stretch factor**: Enter desired stretch (algorithm computes k = ⌊(stretch+1)/2⌋)
+4. **Random seed**: Enter seed for reproducible results
 
-    python3 spanner.py --graph example --stretch 3 --print-edges
+### Complete Example Session with Repeat Options
 
-Generate and process a random graph:
+The program provides two levels of repetition to explore different aspects of the algorithm:
 
-    python3 spanner.py --graph random --n 50 --m 100 --weighted --stretch 5 --seed 42
+#### 1. Same Graph, Different Random Seeds
+After computing a spanner, you can run the algorithm again on the **same graph** with **different randomization** to see how the random sampling affects the result:
 
-Process graph from edgelist file:
+```
+Enter number of edges: 4
+Enter each edge as: vertex1 vertex2 weight (Example: 0 1 1.0)
+Edge 1: 0 1 2.5
+Edge 2: 1 2 1.0
+Edge 3: 2 3 3.0
+Edge 4: 0 3 4.0
+Enter stretch factor: 3
+Enter random seed: 42
 
-    python3 spanner.py --graph edgelist --edgelist my_graph.txt --stretch 3
+Original edges: [(0, 1, 2.5), (1, 2, 1.0), (2, 3, 3.0), (0, 3, 4.0)]
+Spanner edges: [(0, 1, 2.5), (1, 2, 1.0), (2, 3, 3.0)]
+k = 2 | Edge reduction: 25.00%
 
-## Input formats
+Run again with different seed? (y/n): y
 
-**Edgelist format** (for `--graph edgelist`):
-- Unweighted: `u v` (one edge per line)
-- Weighted: `u v w` (one edge per line with weight)
+[Algorithm runs again with seed 43]
+Original edges: [(0, 1, 2.5), (1, 2, 1.0), (2, 3, 3.0), (0, 3, 4.0)]
+Spanner edges: [(0, 1, 2.5), (2, 3, 3.0), (0, 3, 4.0)]
+k = 2 | Edge reduction: 25.00%
 
-## Notes
+Run again with different seed? (y/n): n
+```
 
-- **Stretch vs k:** the algorithm outputs a \((2k-1)\)-spanner with \(k = \lfloor (t+1)/2 \rfloor\).  
-  Example: `--stretch 3` → `k=2` → 3-spanner.
-- **Randomization:** Baswana–Sen is randomized. Different seeds can produce different valid spanners. Using `--seed` makes the result reproducible; omitting it uses fresh randomness.
-- **Algorithm verification:** The implementation includes automatic stretch guarantee verification for all node pairs.
+#### 2. Completely New Graph and Parameters
+After finishing with one graph configuration, you can start over with a **completely different graph**:
+
+```
+Run again with different parameters? (y/n): y
+
+[Program restarts - you can now enter a completely new graph]
+Enter number of edges: 3
+Enter each edge as: vertex1 vertex2 weight (Example: 0 1 1.0)
+Edge 1: 0 1 1.0
+Edge 2: 1 2 2.0  
+Edge 3: 0 2 5.0
+Enter stretch factor: 5
+Enter random seed: 100
+
+[Results for the new graph...]
+```
+
+### Practical Usage Tips
+
+1. **For algorithm demonstration**: Use the same graph with different seeds (option 1) to show randomization effects
+2. **For comprehensive testing**: Use different graphs (option 2) to explore various scenarios
+3. **For reproducible results**: Use the same seed across runs to get identical results
+4. **For comparison studies**: Run multiple seeds on the same graph to compare different valid spanners
