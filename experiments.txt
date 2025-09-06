@@ -1,0 +1,276 @@
+(If not mentioned, will be tried with different random seeds)
+
+Sanity check (triangle):
+Input:
+    Number of edges: 3
+    Edge 1: 0 1 1.0
+    Edge 2: 0 2 1.0
+    Edge 3: 1 2 2.0
+
+Expected Output:
+    with stretch factor: 1 & Seed: 0 -
+        Original edges: [(0, 1, 1.0), (0, 2, 1.0), (1, 2, 2.0)]
+        Spanner edges for k=1 (stretch=1): [(0, 1, 1.0), (0, 2, 1.0), (1, 2, 2.0)]
+        Edge reduction: 0.00%
+    with stretch factor: 3 & Seed: 0 -
+        Original edges: [(0, 1, 1.0), (0, 2, 1.0), (1, 2, 2.0)]
+        Spanner edges for k=2 (stretch=2): [(0, 1, 1.0), (0, 2, 1.0)]
+        Edge reduction: 33.33%
+
+
+Square with diagonal:
+Input:
+    Number of edges: 5
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 1.0
+    Edge 4: 3 0 1.0
+    Edge 5: 0 2 1.0
+
+Expected Output:
+    with stretch factor: 1 -
+        Spanner edges for k=1 (stretch=1): All 5 edges kept
+        Edge reduction: 0.00%
+    with stretch factor: 3 -
+        Spanner edges for k=2 (stretch=3): About 4 edges
+        Edge reduction: ~20%
+
+
+Small chain with extra edges:
+Input:
+    Number of edges: 7
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 1.0
+    Edge 4: 3 4 1.0
+    Edge 5: 0 4 5.0
+    Edge 6: 1 3 2.5
+    Edge 7: 0 2 3.0
+
+Expected Output:
+    with stretch factor: 1 -
+        Spanner edges for k=1 (stretch=1): All 7 edges kept
+        Edge reduction: 0.00%
+    with stretch factor: 3 -
+        Spanner edges for k=2 (stretch=3): About 4-5 edges
+        Edge reduction: ~30-40%
+    with stretch factor: 5 -
+        Spanner edges for k=3 (stretch=5): About 3-4 edges
+        Edge reduction: ~50-60%
+
+
+Random seed variability:
+Input:
+    Number of edges: 4
+    Edge 1: 0 1 2.5
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 3.0
+    Edge 4: 0 3 4.0
+
+Expected Output:
+    with stretch factor: 3 - [(0,1,2.5), (1,2,1.0), (2,3,3.0)] or [(0,1,2.5), (2,3,3.0), (0,3,4.0)] or [(1,2,1.0), (0,3,4.0), (2,3,3.0)] depending on seed
+        Edge reduction: ~25-50% depending on seed
+
+
+Larger graph with clear redundancies: (not sure about this one)
+Input:
+    Number of edges: 8
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 1.0
+    Edge 4: 3 4 1.0
+    Edge 5: 4 5 1.0
+    Edge 6: 0 5 7.0
+    Edge 7: 1 3 2.5
+    Edge 8: 2 4 2.5
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    Spanner edges for k=2 (stretch=3): ~5 edges
+    Edge reduction: ~35-40%
+
+
+Triangle with one extra node:
+Input:
+    Number of edges: 4
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 0 2 5.0
+    Edge 4: 2 3 1.0
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    Spanner edges for k=2 (stretch=3): [(0,1,1.0),(1,2,1.0),(2,3,1.0)]
+    Edge reduction: 25%
+
+
+Disconnected components test:
+Input:
+    Number of edges: 6
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 0 2 2.0
+    Edge 4: 3 4 1.0
+    Edge 5: 4 5 1.0
+    Edge 6: 3 5 2.0
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    Spanner should preserve connectivity within each component
+    Edge reduction: ~33%
+
+
+Dense graph (O(kn^(1+1/k)) bound test):
+Input:
+    Number of edges: 15
+    Edge 1: 0 1 1.0
+    Edge 2: 0 2 1.5
+    Edge 3: 0 3 2.0
+    Edge 4: 0 4 2.5
+    Edge 5: 1 2 1.0
+    Edge 6: 1 3 1.5
+    Edge 7: 1 4 2.0
+    Edge 8: 2 3 1.0
+    Edge 9: 2 4 1.5
+    Edge 10: 3 4 1.0
+    Edge 11: 0 5 3.0
+    Edge 12: 1 5 2.5
+    Edge 13: 2 5 2.0
+    Edge 14: 3 5 1.5
+    Edge 15: 4 5 1.0
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    For k=2: Expected ~6-8 edges (bound is O(6*n^1.5) ≈ 22 for n=6)
+    Edge reduction: ~50-60%
+
+
+Uniform weights test:
+Input:
+    Number of edges: 6
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 1.0
+    Edge 4: 3 0 1.0
+    Edge 5: 0 2 1.0
+    Edge 6: 1 3 1.0
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    Symmetric behavior, multiple valid spanners possible
+    Edge reduction: ~33-50%
+
+
+Random weights test (same topology):
+Input:
+    Number of edges: 6
+    Edge 1: 0 1 2.3
+    Edge 2: 1 2 0.8
+    Edge 3: 2 3 4.1
+    Edge 4: 3 0 1.7
+    Edge 5: 0 2 3.5
+    Edge 6: 1 3 0.9
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    Weight-dependent selection, lighter edges preferred
+    Edge reduction: ~33-50%
+
+
+Progressive stretch test (same graph):
+Input:
+    Number of edges: 8
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 1.0
+    Edge 4: 3 0 3.0
+    Edge 5: 0 2 2.5
+    Edge 6: 1 3 2.5
+    Edge 7: 0 4 1.0
+    Edge 8: 4 2 1.5
+
+Test with:
+    Stretch factor: 1 (k=1) - Expected: All 8 edges, 0% reduction
+    Stretch factor: 3 (k=2) - Expected: ~5-6 edges, ~25-37% reduction
+    Stretch factor: 5 (k=3) - Expected: ~4-5 edges, ~37-50% reduction
+    Stretch factor: 7 (k=4) - Expected: ~4 edges, ~50% reduction
+
+
+Small scale (5 nodes):
+Input:
+    Number of edges: 7
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 1.0
+    Edge 4: 3 4 1.0
+    Edge 5: 0 4 4.0
+    Edge 6: 1 4 3.0
+    Edge 7: 0 2 2.5
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    ~4-5 edges retained
+    Edge reduction: ~30-40%
+
+
+Medium scale (8 nodes):
+Input:
+    Number of edges: 12
+    Edge 1: 0 1 1.0
+    Edge 2: 1 2 1.0
+    Edge 3: 2 3 1.0
+    Edge 4: 3 4 1.0
+    Edge 5: 4 5 1.0
+    Edge 6: 5 6 1.0
+    Edge 7: 6 7 1.0
+    Edge 8: 7 0 7.0
+    Edge 9: 0 3 3.5
+    Edge 10: 1 4 3.0
+    Edge 11: 2 5 3.0
+    Edge 12: 3 6 3.0
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    ~7-8 edges retained
+    Edge reduction: ~30-40%
+
+
+Star graph test (high-degree center):
+Input:
+    Number of edges: 5
+    Edge 1: 0 1 1.0
+    Edge 2: 0 2 1.0
+    Edge 3: 0 3 1.0
+    Edge 4: 0 4 1.0
+    Edge 5: 0 5 1.0
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    All edges should be kept (star is already optimal)
+    Edge reduction: 0%
+
+
+Complete subgraph test (K4):
+Input:
+    Number of edges: 6
+    Edge 1: 0 1 1.0
+    Edge 2: 0 2 1.0
+    Edge 3: 0 3 1.0
+    Edge 4: 1 2 1.0
+    Edge 5: 1 3 1.0
+    Edge 6: 2 3 1.0
+    Stretch factor: 3
+    Seed: 0
+
+Expected Output:
+    ~3-4 edges retained (tree + maybe 1 extra)
+    Edge reduction: ~33-50%
