@@ -111,3 +111,16 @@ Enter random seed: 100
 2. **For comprehensive testing**: Use different graphs (option 2) to explore various scenarios
 3. **For reproducible results**: Use the same seed across runs to get identical results
 4. **For comparison studies**: Run multiple seeds on the same graph to compare different valid spanners
+
+## Visualization Suite
+
+The repository also includes a visualizer (`viz_spanner.py`) that produces **side-by-side plots** of the original graph and its computed spanner.
+
+All images are saved under the `outputs/` directory, organized per test case.
+
+### Run the Entire Suite
+
+Run all built-in test cases which are listed in experiments.txt (multiple graphs and stretch factors)
+
+```bash
+MPLBACKEND=Agg python3 viz_spanner.py suite --name all

@@ -2,24 +2,22 @@ from __future__ import annotations
 
 import math
 import argparse
-from typing import Dict, Hashable, Optional, Tuple
+import os
+import random
+from typing import Dict, Hashable, Optional, Tuple, List
 
 from simple_graph import Graph, gnm_random_graph
-
 import matplotlib.pyplot as plt
-
-
-# TODO: Should be removed!
 
 def _load_algo():
     try:
-        from spanner import baswana_sen_spanner
-        return baswana_sen_spanner
+        from baswana_spanner import baswana_spanner
+        return baswana_spanner
     except Exception as e:
         raise RuntimeError(
-            "Could not import baswana_sen_spanner from spanner.py. "
-            "Ensure spanner.py is in the SAME folder and defines "
-            "def baswana_sen_spanner(G, stretch, weight=None, seed=None, **kwargs)."
+            "Could not import baswana_spanner from baswana_spanner.py. "
+            "Ensure baswana_spanner.py defines "
+            "def baswana_spanner(G, stretch, weight=None, seed=None, **kwargs)."
         ) from e
 
 
@@ -36,38 +34,27 @@ def _circular_layout(nodes) -> Dict[Hashable, Tuple[float, float]]:
     return pos
 
 
-def _draw_graph(ax, G: Graph, pos: Dict[Hashable, Tuple[float, float]],
-                title: str, weight_attr: Optional[str] = None) -> None:
-    for u, v in G.edges():
-        x1, y1 = pos[u]
-        x2, y2 = pos[v]
-        ax.plot([x1, x2], [y1, y2], linewidth=1.2, zorder=1)
+def _draw_graph(ax, G, pos, *, weight_attr=None, title=None, edge_color="0.2"):
+    xs = [pos[u][0] for u in G.nodes()]
+    ys = [pos[u][1] for u in G.nodes()]
+    ax.scatter(xs, ys, s=200, zorder=3)
 
-    xs = [pos[v][0] for v in pos]
-    ys = [pos[v][1] for v in pos]
-    ax.scatter(xs, ys, s=160, zorder=3)
+    for u in G.nodes():
+        ax.text(pos[u][0], pos[u][1] + 0.02, str(u),
+                ha="center", va="bottom", fontsize=10)
 
-    for v, (x, y) in pos.items():
-        ax.text(
-            x, y, str(v),
-            ha="center", va="center", fontsize=9, color="white",
-            bbox=dict(boxstyle="circle,pad=0.18", facecolor="black",
-                      linewidth=0.0, alpha=0.6),
-            zorder=4
-        )
+    for (u, v, attrs) in G.edges(data=True):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        ax.plot([x0, x1], [y0, y1], linewidth=2, color=edge_color, zorder=2)
 
-    if weight_attr:
-        for u, v in G.edges():
-            if weight_attr in G.adj[u][v]:
-                w = G.adj[u][v][weight_attr]
-                mx = (pos[u][0] + pos[v][0]) / 2.0
-                my = (pos[u][1] + pos[v][1]) / 2.0
-                ax.text(mx, my, f"{float(w):.2f}", fontsize=7, alpha=0.75, zorder=5)
+        if weight_attr:
+            w = attrs.get(weight_attr, None)
+            if w is not None:
+                ax.text((x0 + x1) / 2, (y0 + y1) / 2, str(w), fontsize=9)
 
-    ax.set_title(title, fontsize=11)
-    ax.set_aspect("equal")
-    ax.axis("off")
-
+    ax.set_title(title or "")
+    ax.set_axis_off()
 
 def visualize_original_and_spanner(G: Graph, H: Graph,
                                    weight_attr: Optional[str] = None,
@@ -93,23 +80,28 @@ def visualize_original_and_spanner(G: Graph, H: Graph,
 
     fig.tight_layout(rect=[0, 0.02, 1, 0.95])
 
-    backend = plt.get_backend().lower()
-    if savepath:
-        plt.savefig(savepath, dpi=180, bbox_inches="tight")
-    elif "agg" in backend:
-        auto_path = "spanner_viz.png"
-        plt.savefig(auto_path, dpi=180, bbox_inches="tight")
-        print(f"[headless] Saved figure to {auto_path}")
-    else:
-        plt.show()
+    target_dir = os.path.dirname(savepath) if savepath else "outputs"
+    if target_dir == "":
+        target_dir = "outputs"
+    os.makedirs(target_dir, exist_ok=True)
 
+    if savepath:
+        out = savepath
+    else:
+        out = os.path.join(target_dir, "spanner_viz.png")
+
+    plt.savefig(out, dpi=180, bbox_inches="tight")
+    print(f"[saved] {out}")
     plt.close(fig)
 
 
-def run_and_visualize(G: Graph, stretch: int = 3, weight_attr: Optional[str] = None,
-                      seed: Optional[int] = None, savepath: Optional[str] = None) -> Graph:
+def run_and_visualize(G: Graph, stretch: int = 3,
+                      weight_attr: Optional[str] = None,
+                      seed: Optional[int] = None,
+                      savepath: Optional[str] = None) -> Graph:
     baswana_sen_spanner = _load_algo()
-    H = baswana_sen_spanner(G, stretch=stretch, weight=weight_attr, seed=seed)
+    H = baswana_sen_spanner(G, stretch=stretch,
+                            weight=weight_attr, seed=seed)
 
     k = max(1, (stretch + 1) // 2)
     t_eff = 2 * k - 1
@@ -122,132 +114,229 @@ def run_and_visualize(G: Graph, stretch: int = 3, weight_attr: Optional[str] = N
     )
     return H
 
-
-from typing import Tuple, Optional
+def build_graph_from_edges(edges: List[Tuple[int, int, float]]) -> Tuple[Graph, str]:
+    G = Graph()
+    for (u, v, w) in edges:
+        G.add_edge(u, v, w=float(w))
+    return G, "w"
 
 
 def _build_demo_graph(kind: str, n: int, m: int, weighted: bool,
                       seed: Optional[int], case: str) -> Tuple[Graph, Optional[str]]:
     if kind == "example":
         G = Graph()
-
         if case == "triangle":
             for a, b in [(0, 1), (0, 2)]:
                 G.add_edge(a, b, w=1.0)
             G.add_edge(1, 2, w=2.0)
             return G, "w"
-
-        elif case == "square":
-            for a, b in [(0, 1), (1, 2), (2, 3), (3, 0)]:
-                G.add_edge(a, b)
-            return G, None
-
-        elif case == "square_diag":
+        elif case == "rectangle_diag":
             for a, b in [(0, 1), (1, 2), (2, 3), (3, 0)]:
                 G.add_edge(a, b, w=1.0)
-            G.add_edge(0, 2, w=2.0)
+            G.add_edge(0, 2, w=1.0)
             return G, "w"
-
-        elif case == "path6":
-            for a, b in [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)]:
-                G.add_edge(a, b)
-            return G, None
-
-        elif case == "star6":
-            for leaf in [1, 2, 3, 4, 5]:
-                G.add_edge(0, leaf)
-            return G, None
-
-        elif case == "k4_mix":
-            edges = {
-                (0, 1): 1.0, (0, 2): 1.0, (1, 2): 1.2,
-                (0, 3): 2.0, (1, 3): 2.2, (2, 3): 2.4
-            }
-            for (u, v), w in edges.items():
-                G.add_edge(u, v, w=w)
-            return G, "w"
-
-        elif case == "two_tris_bridge":
-            for a, b in [(0, 1), (1, 2), (2, 0)]:
+        elif case == "rectangle_diag_alt":
+            for a, b in [(0, 1), (1, 2), (2, 3), (3, 0)]:
                 G.add_edge(a, b, w=1.0)
-            for a, b in [(3, 4), (4, 5), (5, 3)]:
-                G.add_edge(a, b, w=1.0)
-            G.add_edge(2, 3, w=0.5)
+            G.add_edge(1, 3, w=1.0)
             return G, "w"
-
-        elif case == "square_diag_equal":
-            for a, b in [(0, 1), (1, 2), (2, 3), (3, 0), (0, 2)]:
-                G.add_edge(a, b, w=1.0)
-            return G, "w"
-
-        elif case == "wheel6":
-            for i in range(1, 6):
-                G.add_edge(0, i, w=1.0)
-            rim = [1, 2, 3, 4, 5]
-            for i in range(len(rim)):
-                u, v = rim[i], rim[(i + 1) % len(rim)]
-                G.add_edge(u, v, w=1.8)
-            return G, "w"
-
-        elif case == "ladder":
-            for a, b in [(0, 1), (1, 2), (2, 3)]:
-                G.add_edge(a, b, w=1.0)
-            for a, b in [(4, 5), (5, 6), (6, 7)]:
-                G.add_edge(a, b, w=1.0)
-            for a, b in [(0, 4), (1, 5), (2, 6), (3, 7)]:
-                G.add_edge(a, b, w=1.8)
-            return G, "w"
-
-        elif case == "pentagon":
-            for a, b in [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]:
-                G.add_edge(a, b)
-            return G, None
-
         else:
             raise SystemExit(f"Unknown --case: {case}")
-
     elif kind == "random":
         G = gnm_random_graph(n, m, seed=seed)
         if weighted:
-            import random as _r
-            rng = _r.Random(seed)
+            rng = random.Random(seed)
             for u, v in G.edges():
                 w = 1.0 + rng.random() * 9.0
-                G.adj[u][v]["w"] = w
-                G.adj[v][u]["w"] = w
+                G.adjacency_lists[u][v]["w"] = w
+                G.adjacency_lists[v][u]["w"] = w
             return G, "w"
         return G, None
-
     else:
         raise SystemExit("kind must be 'example' or 'random'")
 
+TEST_SPECS = {
+    "sanity_triangle": {
+        "edges": [
+            (0, 1, 1.0), (0, 2, 1.0), (1, 2, 2.0),
+        ],
+        "stretches": [1, 3],
+    },
+    "square_with_diagonal": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 0, 1.0), (0, 2, 1.0),
+        ],
+        "stretches": [1, 3],
+    },
+    "small_chain_extra": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 4, 1.0),
+            (0, 4, 5.0), (1, 3, 2.5), (0, 2, 3.0),
+        ],
+        "stretches": [1, 3, 5],
+    },
+    "seed_variability": {
+        "edges": [
+            (0, 1, 2.5), (1, 2, 1.0), (2, 3, 3.0), (0, 3, 4.0),
+        ],
+        "stretches": [3],
+    },
+    "larger_redundancies": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 4, 1.0),
+            (4, 5, 1.0), (0, 5, 7.0), (1, 3, 2.5), (2, 4, 2.5),
+        ],
+        "stretches": [3],
+    },
+    "triangle_plus_one": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (0, 2, 5.0), (2, 3, 1.0),
+        ],
+        "stretches": [3],
+    },
+    "two_components": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (0, 2, 2.0),
+            (3, 4, 1.0), (4, 5, 1.0), (3, 5, 2.0),
+        ],
+        "stretches": [3],
+    },
+    "dense_boundish": {
+        "edges": [
+            (0, 1, 1.0), (0, 2, 1.5), (0, 3, 2.0), (0, 4, 2.5),
+            (1, 2, 1.0), (1, 3, 1.5), (1, 4, 2.0),
+            (2, 3, 1.0), (2, 4, 1.5),
+            (3, 4, 1.0),
+            (0, 5, 3.0), (1, 5, 2.5), (2, 5, 2.0), (3, 5, 1.5), (4, 5, 1.0),
+        ],
+        "stretches": [3],
+    },
+    "uniform_weights": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 0, 1.0),
+            (0, 2, 1.0), (1, 3, 1.0),
+        ],
+        "stretches": [3],
+    },
+    "random_weights_same_topology": {
+        "edges": [
+            (0, 1, 2.3), (1, 2, 0.8), (2, 3, 4.1), (3, 0, 1.7),
+            (0, 2, 3.5), (1, 3, 0.9),
+        ],
+        "stretches": [3],
+    },
+    "progressive_stretch": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 0, 3.0),
+            (0, 2, 2.5), (1, 3, 2.5), (0, 4, 1.0), (4, 2, 1.5),
+        ],
+        "stretches": [1, 3, 5, 7],
+    },
+    "small_scale_5": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 4, 1.0),
+            (0, 4, 4.0), (1, 4, 3.0), (0, 2, 2.5),
+        ],
+        "stretches": [3],
+    },
+    "medium_scale_8": {
+        "edges": [
+            (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0), (3, 4, 1.0),
+            (4, 5, 1.0), (5, 6, 1.0), (6, 7, 1.0), (7, 0, 7.0),
+            (0, 3, 3.5), (1, 4, 3.0), (2, 5, 3.0), (3, 6, 3.0),
+        ],
+        "stretches": [3],
+    },
+    "star_center": {
+        "edges": [
+            (0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0), (0, 4, 1.0), (0, 5, 1.0),
+        ],
+        "stretches": [3],
+    },
+    "k4_complete": {
+        "edges": [
+            (0, 1, 1.0), (0, 2, 1.0), (0, 3, 1.0),
+            (1, 2, 1.0), (1, 3, 1.0), (2, 3, 1.0),
+        ],
+        "stretches": [3],
+    },
+}
+
+
+def run_suite(suite: str, num_seeds: int = 3, fixed_seed: Optional[int] = None):
+    if suite == "all":
+        names = list(TEST_SPECS.keys())
+    else:
+        if suite not in TEST_SPECS:
+            raise SystemExit(f"Unknown suite '{suite}'. "
+                             f"Available: {', '.join(TEST_SPECS.keys())}, or 'all'")
+        names = [suite]
+
+    rng = random.Random()
+
+    for name in names:
+        spec = TEST_SPECS[name]
+        edges = spec["edges"]
+        stretches = spec["stretches"]
+
+        if fixed_seed is not None:
+            seeds = [fixed_seed]
+        else:
+            seeds = [rng.randint(0, 100) for _ in range(num_seeds)]
+
+        G, w = build_graph_from_edges(edges)
+        base_dir = os.path.join("outputs", "tests", name)
+        os.makedirs(base_dir, exist_ok=True)
+
+        for s in stretches:
+            for sd in seeds:
+                filename = f"{name}_stretch{s}_seed{sd}.png"
+                out_path = os.path.join(base_dir, filename)
+                print(f"[run] {name}: stretch={s}, seed={sd} -> {out_path}")
+                run_and_visualize(G, stretch=s, weight_attr=w, seed=sd, savepath=out_path)
+
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Visualize original graph vs. Baswana–Sen spanner (side-by-side)."
-    )
-    parser.add_argument(
-        "--case",
-        choices=[
-            "triangle", "square", "square_diag", "path6", "star6",
-            "k4_mix", "two_tris_bridge", "ladder", "pentagon",
-            "wheel6", "k4_complete", "square_diag_equal"  # ← NEW
-        ],
-        default="triangle",
-        help="Which simple example graph to build when --graph example."
-    )
-    parser.add_argument("--graph", choices=["example", "random"], default="example")
-    parser.add_argument("--n", type=int, default=20, help="random graph: number of nodes")
-    parser.add_argument("--m", type=int, default=40, help="random graph: number of edges")
-    parser.add_argument("--weighted", action="store_true", help="random graph: assign 'w' in [1,10)")
-    parser.add_argument("--stretch", type=int, default=3)
-    parser.add_argument("--seed", type=int, default=None)
-    parser.add_argument("--save", type=str, default=None, help="optional path to save the PNG")
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="mode", required=False)
+
+    # Single mode
+    p_single = sub.add_parser("single")
+    p_single.add_argument("--case", choices=["triangle", "rectangle_diag", "rectangle_diag_alt"], default="triangle")
+    p_single.add_argument("--graph", choices=["example", "random"], default="example")
+    p_single.add_argument("--n", type=int, default=20)
+    p_single.add_argument("--m", type=int, default=40)
+    p_single.add_argument("--weighted", action="store_true")
+    p_single.add_argument("--stretch", type=int, default=3)
+    p_single.add_argument("--seed", type=int, default=None)
+    p_single.add_argument("--save", type=str, default=None)
+    p_single.set_defaults(default_mode=True)
+
+    # Suite mode
+    p_suite = sub.add_parser("suite")
+    p_suite.add_argument("--name", type=str, default="all")
+    p_suite.add_argument("--num-seeds", type=int, default=3)
+    p_suite.add_argument("--fixed-seed", type=int, default=None)
+
     args = parser.parse_args()
 
-    G, weight_attr = _build_demo_graph(args.graph, args.n, args.m, args.weighted, args.seed, args.case)
-    run_and_visualize(G, stretch=args.stretch, weight_attr=weight_attr,
-                      seed=args.seed, savepath=args.save)
+    if getattr(args, "default_mode", False) or args.mode is None:
+        seed = args.seed if args.seed is not None else random.randint(0, 10**9)
+        G, weight_attr = _build_demo_graph(args.graph, args.n, args.m,
+                                           args.weighted, seed, args.case)
+        if args.save:
+            os.makedirs("outputs", exist_ok=True)
+            out = os.path.join("outputs", args.save)
+        else:
+            os.makedirs("outputs", exist_ok=True)
+            out = os.path.join("outputs", f"{args.graph}_{args.case}_stretch{args.stretch}_seed{seed}.png")
+        print(f"[single] graph={args.graph} case={args.case} stretch={args.stretch} seed={seed}")
+        run_and_visualize(G, stretch=args.stretch, weight_attr=weight_attr, seed=seed, savepath=out)
+        return
+
+    if args.mode == "suite":
+        run_suite(args.name, num_seeds=args.num_seeds, fixed_seed=args.fixed_seed)
+        return
 
 
 if __name__ == "__main__":

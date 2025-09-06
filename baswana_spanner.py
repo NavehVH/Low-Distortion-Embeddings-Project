@@ -134,6 +134,19 @@ def add_edge_to_spanner(spanner_graph: Graph, residual_graph: Graph, vertex_u: H
 def convert_to_undirected_edge(vertex_u: Hashable, vertex_v: Hashable) -> Tuple[Hashable, Hashable]:
     return (vertex_u, vertex_v) if repr(vertex_u) <= repr(vertex_v) else (vertex_v, vertex_u)
 
+
+# -------- adapter for viz_spanner.py --------
+def baswana_spanner(G, stretch=3, weight=None, seed=None, **kwargs):
+    global original_graph, random_seed, k_parameter
+    original_graph = G
+    random_seed = 0 if seed is None else int(seed)
+    k_parameter = max(1, (int(stretch) + 1) // 2)
+
+    H = spanner_algorithm()
+    return H
+# -------- end adapter --------
+
+
 if __name__ == "__main__":
     repeat = True
     while repeat:
@@ -148,3 +161,5 @@ if __name__ == "__main__":
             random_seed += 1
 
         repeat = (input("Run again with different parameters? (y/n): ").strip().lower() == 'y')
+        
+
