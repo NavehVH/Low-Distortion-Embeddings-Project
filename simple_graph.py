@@ -67,12 +67,6 @@ class Graph:
     def has_edge(self, vertex_u: Hashable, vertex_v: Hashable) -> bool:
         return vertex_v in self.adjacency_lists.get(vertex_u, {})
 
-    def copy(self) -> "Graph":
-        copied_graph = Graph()
-        for vertex_u, vertex_v, edge_attributes in self.edges(data=True):
-            copied_graph.add_edge(vertex_u, vertex_v, **edge_attributes)
-        return copied_graph
-
 
 def _dijkstra_single_source(graph: Graph, source_vertex: Hashable, weight_attribute: Optional[str]) -> Dict[Hashable, float]:
     distances: Dict[Hashable, float] = {source_vertex: 0.0}
