@@ -135,8 +135,8 @@ def convert_to_undirected_edge(vertex_u: Hashable, vertex_v: Hashable) -> Tuple[
     return (vertex_u, vertex_v) if repr(vertex_u) <= repr(vertex_v) else (vertex_v, vertex_u)
 
 
-# -------- adapter for viz_spanner.py --------
-def baswana_spanner(G, stretch=3, weight=None, seed=None, **kwargs):
+# Use this function to visualize or test the spanner algorithm
+def visual_spanner(G, stretch=3, weight=None, seed=None, **kwargs):
     global original_graph, random_seed, k_parameter
     original_graph = G
     random_seed = 0 if seed is None else int(seed)
@@ -144,7 +144,6 @@ def baswana_spanner(G, stretch=3, weight=None, seed=None, **kwargs):
 
     H = spanner_algorithm()
     return H
-# -------- end adapter --------
 
 
 if __name__ == "__main__":

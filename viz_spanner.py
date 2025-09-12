@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 
 def _load_algo():
     try:
-        from baswana_spanner import baswana_spanner
-        return baswana_spanner
+        from baswana_spanner import visual_spanner
+        return visual_spanner
     except Exception as e:
         raise RuntimeError(
             "Could not import baswana_spanner from baswana_spanner.py. "
