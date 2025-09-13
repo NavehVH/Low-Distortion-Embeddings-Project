@@ -124,3 +124,49 @@ Run all built-in test cases which are listed in experiments.txt (multiple graphs
 
 ```bash
 MPLBACKEND=Agg python3 viz_spanner.py suite --name all
+```
+
+## Advanced Testing Framework
+
+### Spanner Tester (`spanner_tester.py`)
+
+A comprehensive testing framework for evaluating the Baswana-Sen algorithm on randomly generated graphs with various parameters:
+
+#### Features:
+- **Random graph generation** with configurable vertex count, edge probability, and weight distributions
+- **Multiple test configurations** with different density tiers and weight patterns
+- **Automated spanner analysis** including theoretical bound verification
+- **Average stretch calculation** using the formula: `Σ(dH(ui,vi)/w(ui,vi)) / |E|` where H is the spanner graph
+- **CSV output** with comprehensive metrics and test metadata
+- **Graph serialization** for result reproducibility
+
+#### Configuration Constants:
+- `MINIMAL_VERTICES = 100`: Minimum graph size for testing
+- `MAXIMAL_VERTICES = 1000`: Maximum graph size for testing
+- `CONFIGURATIONS_NUMBER = 5`: Number of different test configurations per run
+- `EXECUTION_NUMBER = 3`: Repetitions per configuration for statistical reliability
+- `STRETCH_FACTORS = [3, 5, 7]`: Stretch factors to test
+
+#### Usage:
+```bash
+python3 spanner_tester.py
+```
+
+Results are saved in `test_results/spanner_test_results.csv` with detailed metrics for analysis.
+
+### Graph Configuration Enums (`graph_enums.py`)
+
+Defines standardized graph generation parameters:
+
+#### Weight Distributions:
+- **UNIFORM**: Uniform random weights within specified range
+- **EXPONENTIAL**: Exponentially distributed weights (natural for network distances)
+- **NORMAL**: Normally distributed weights (good for physical networks)
+- **INTEGER**: Integer weights only (discrete scenarios)
+
+#### Density Tiers:
+- **SPARSE**: Low edge probability (3-15%) - models sparse networks
+- **MEDIUM**: Medium edge probability (20-40%) - balanced connectivity
+- **DENSE**: High edge probability (40-60%) - highly connected graphs
+
+Each enum provides methods for parameter generation and weight sampling, ensuring consistent and reproducible graph generation across test runs.

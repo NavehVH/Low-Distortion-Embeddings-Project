@@ -80,9 +80,9 @@ def visualize_original_and_spanner(G: Graph, H: Graph,
 
     fig.tight_layout(rect=[0, 0.02, 1, 0.95])
 
-    target_dir = os.path.dirname(savepath) if savepath else "outputs"
+    target_dir = os.path.dirname(savepath) if savepath else "sanity-outputs"
     if target_dir == "":
-        target_dir = "outputs"
+        target_dir = "sanity-outputs"
     os.makedirs(target_dir, exist_ok=True)
 
     if savepath:
@@ -285,7 +285,7 @@ def run_suite(suite: str, num_seeds: int = 3, fixed_seed: Optional[int] = None):
             seeds = [rng.randint(0, 100) for _ in range(num_seeds)]
 
         G, w = build_graph_from_edges(edges)
-        base_dir = os.path.join("outputs", "tests", name)
+        base_dir = os.path.join("sanity-outputs", "tests", name)
         os.makedirs(base_dir, exist_ok=True)
 
         for s in stretches:
@@ -325,11 +325,11 @@ def main():
         G, weight_attr = _build_demo_graph(args.graph, args.n, args.m,
                                            args.weighted, seed, args.case)
         if args.save:
-            os.makedirs("outputs", exist_ok=True)
-            out = os.path.join("outputs", args.save)
+            os.makedirs("sanity-outputs", exist_ok=True)
+            out = os.path.join("sanity-outputs", args.save)
         else:
-            os.makedirs("outputs", exist_ok=True)
-            out = os.path.join("outputs", f"{args.graph}_{args.case}_stretch{args.stretch}_seed{seed}.png")
+            os.makedirs("sanity-outputs", exist_ok=True)
+            out = os.path.join("sanity-outputs", f"{args.graph}_{args.case}_stretch{args.stretch}_seed{seed}.png")
         print(f"[single] graph={args.graph} case={args.case} stretch={args.stretch} seed={seed}")
         run_and_visualize(G, stretch=args.stretch, weight_attr=weight_attr, seed=seed, savepath=out)
         return
