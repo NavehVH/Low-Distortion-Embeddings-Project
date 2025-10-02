@@ -111,12 +111,10 @@ def create_random_graph(n_vertices: int, edge_prob: float, weight_dist: WeightDi
         random.seed(seed)
     graph = Graph()
     graph.add_nodes_from(range(n_vertices))
-    # Create spanning tree for connectivity
     vertices = list(range(n_vertices))
     random.shuffle(vertices)
     for i in range(1, n_vertices):
         graph.add_edge(vertices[random.randint(0, i - 1)], vertices[i], w=weight_dist.generate_weight(weight_params))
-    # Add additional random edges
     max_edges = n_vertices * (n_vertices - 1) // 2
     target_edges = int(edge_prob * max_edges)
     for i in range(n_vertices):
@@ -129,9 +127,7 @@ def create_random_graph(n_vertices: int, edge_prob: float, weight_dist: WeightDi
 def generate_test_configs() -> List[Dict]:
     configs = []
     for i in range(CONFIGURATIONS_NUMBER):
-        # Assign density tier (cycle through tiers to ensure variety)
         density_tier = DENSITY_TIERS[i % len(DENSITY_TIERS)]
-        # Ensure minimum density for meaningful spanner testing
         edge_prob = max(0.03, density_tier.generate_edge_prob())
         weight_dist = random.choice(WEIGHT_OPTIONS)
         weight_params = weight_dist.generate_params()
@@ -152,7 +148,6 @@ def setup_test_directories() -> None:
     os.makedirs(os.path.dirname(RESULTS_CSV_FILE), exist_ok=True)
     os.makedirs(GRAPHS_DIR, exist_ok=True)
 
-# Global counter for test IDs within execution
 _test_id_counter = None
 def get_next_test_id() -> str:
     global _test_id_counter
@@ -163,10 +158,9 @@ def get_next_test_id() -> str:
             try:
                 with open(RESULTS_CSV_FILE, 'r') as f:
                     lines = f.readlines()
-                    if len(lines) <= 1:  # Only header or empty
+                    if len(lines) <= 1:  
                         _test_id_counter = 1
                     else:
-                        # Get the last test ID and start from next number
                         last_line = lines[-1].strip()
                         if last_line:
                             last_id = last_line.split(',')[0]
@@ -235,7 +229,6 @@ def run_tests(configs: List[Dict]) -> List[Dict]:
                 reduction = (1.0 - spanner.number_of_edges() / max(1, graph.number_of_edges())) * 100
                 k = max(1, (stretch + 1) // 2)
                 bound = k * (graph.number_of_nodes() ** (1.0 + 1.0/k))
-                # precompute distances once per (graph, spanner)
                 dist_G = dijkstra_all_pairs(graph)
                 dist_H = dijkstra_all_pairs(spanner)
                 avg_stretch = calculate_average_stretch(graph, spanner, dist_G, dist_H)

@@ -4,7 +4,7 @@ import heapq
 import random
 
 
-# Using our own implementation so will be adjusted to the ones needed in the essay
+# Using our own implementation so will be adjusted to the ones needed in the research
 class Graph:
     def __init__(self):
         self.adjacency_lists: Dict[Hashable, Dict[Hashable, Dict]] = {}

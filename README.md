@@ -19,7 +19,11 @@ The algorithm's size bound essentially matches the worst-case lower bound implie
 ```
 baswana_spanner.py      # Main Baswana-Sen algorithm implementation
 simple_graph.py         # Custom Graph class with adjacency list representation
-README.md              # This documentation
+graph_enums.py          # Enums for weight distributions and density tiers
+spanner_tester.py       # Experiment runner: generates graphs, runs algorithm, saves results
+test_results/           # Directory containing CSV output and generated spanner files
+report/                 # Our mini-project paper
+README.md               # Project documentation
 ```
 
 ## Requirements
@@ -111,12 +115,6 @@ Enter random seed: 100
 2. **For comprehensive testing**: Use different graphs (option 2) to explore various scenarios
 3. **For reproducible results**: Use the same seed across runs to get identical results
 4. **For comparison studies**: Run multiple seeds on the same graph to compare different valid spanners
-
-## Visualization Suite
-
-The repository also includes a visualizer (`viz_spanner.py`) that produces **side-by-side plots** of the original graph and its computed spanner.
-
-All images are saved under the `outputs/` directory, organized per test case.
 
 ### Run the Entire Suite
 
